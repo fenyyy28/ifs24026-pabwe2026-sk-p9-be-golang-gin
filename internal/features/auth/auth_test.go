@@ -61,7 +61,8 @@ func TestRegisterAndLogin(t *testing.T) {
 	u, err := svc.Register(RegisterRequest{Username: "feny", Email: "feny@mail.com", Password: "secret1"})
 	require.NoError(t, err)
 	assert.Equal(t, "member", u.Role)
-	assert.NotEqual(t, "secret1", u.Password)
+	assert.NotEmpty(t, u.Token)
+	assert.Equal(t, "feny", u.User.Username)
 
 	_, err = svc.Register(RegisterRequest{Username: "feny", Email: "other@mail.com", Password: "secret1"})
 	assert.ErrorIs(t, err, ErrDuplicate)

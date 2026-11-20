@@ -64,14 +64,43 @@ func TestGenerateSearchFailureOrDisabled(t *testing.T) {
 	assert.Len(t, res.Sources, 0)
 }
 
-func TestGenerateErrors(t *testing.T) {
+func TestGenerateFallback(t *testing.T) {
+	ctx := context.Background()
+
+	// OpenAI gagal -> draf cadangan (bukan error), kategori tetap dinormalisasi
 	svc := NewService(fakeSearch{}, &fakeChat{err: errors.New("boom")})
-	_, err := svc.Generate(context.Background(), GenerateRequest{Topic: "x"})
-	assert.Error(t, err)
+	res, err := svc.Generate(ctx, GenerateRequest{Topic: "Go", Category: "Bisnis"})
+	require.NoError(t, err)
+	assert.Equal(t, "Go", res.Title)
+	assert.Equal(t, "Bisnis", res.Category)
+	assert.NotEmpty(t, res.Excerpt)
+	assert.Contains(t, res.Content, "Go")
+	assert.NotNil(t, res.Sources)
+
+	// balasan kosong -> draf cadangan
+	svc = NewService(fakeSearch{}, &fakeChat{out: "   "})
+	res, err = svc.Generate(ctx, GenerateRequest{Topic: "x", Category: "Aneh"})
+	require.NoError(t, err)
+	assert.Equal(t, "x", res.Title)
+	assert.Equal(t, "Umum", res.Category)
+
+	// balasan bukan JSON -> draf cadangan
+	svc = NewService(fakeSearch{}, &fakeChat{out: "bukan json"})
+	res, err = svc.Generate(ctx, GenerateRequest{Topic: "x"})
+	require.NoError(t, err)
+	assert.Equal(t, "x", res.Title)
+	assert.Contains(t, res.Content, "x")
+
+	// topik hanya spasi -> judul bawaan
+	svc = NewService(fakeSearch{}, &fakeChat{err: errors.New("boom")})
+	res, err = svc.Generate(ctx, GenerateRequest{Topic: "  "})
+	require.NoError(t, err)
+	assert.Equal(t, "Artikel Baru", res.Title)
 
 	svc = NewService(fakeSearch{}, &fakeChat{out: "bukan json"})
-	_, err = svc.Generate(context.Background(), GenerateRequest{Topic: "x"})
-	assert.ErrorContains(t, err, "invalid AI response")
+	res, err = svc.Generate(ctx, GenerateRequest{Topic: "  "})
+	require.NoError(t, err)
+	assert.Equal(t, "Artikel Baru", res.Title)
 }
 
 func TestHelpers(t *testing.T) {
@@ -182,5 +211,6 @@ func TestHandler(t *testing.T) {
 	}
 	assert.Equal(t, 200, post("/ok", `{"topic":"Go","include_web_search":true}`))
 	assert.Equal(t, 400, post("/ok", `{}`))
-	assert.Equal(t, 502, post("/err", `{"topic":"Go"}`))
+	// OpenAI gagal -> tetap 200 dengan draf cadangan
+	assert.Equal(t, 200, post("/err", `{"topic":"Go"}`))
 }

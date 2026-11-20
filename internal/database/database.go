@@ -53,10 +53,14 @@ func Seed(db *gorm.DB, cfg *config.Config) error {
 		if err != nil {
 			return err
 		}
-		user := User{Username: s.username, Email: s.email, Password: string(hash), Role: s.role}
-		if err := db.Where("username = ?", s.username).FirstOrCreate(&user).Error; err != nil {
+		// Buat bila belum ada; bila sudah ada, pastikan password & role sesuai .env.
+		user := User{Username: s.username}
+		if err := db.Where("username = ?", s.username).
+			Attrs(User{Email: s.email}).
+			Assign(User{Password: string(hash), Role: s.role}).
+			FirstOrCreate(&user).Error; err != nil {
 			return err
 		}
 	}
 	return nil
-}
+}	
