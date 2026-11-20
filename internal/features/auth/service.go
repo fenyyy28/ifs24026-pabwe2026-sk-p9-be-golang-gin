@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"app/internal/database"
+	"app/internal/debuglog"
 	"app/internal/middleware"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -75,14 +76,17 @@ func (s *Service) Register(req RegisterRequest) (*AuthResponse, error) {
 func (s *Service) Login(req LoginRequest) (*AuthResponse, error) {
 	u, err := s.repo.FindByLogin(req.Username)
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		debuglog.Addf("LOGIN ident=%q result=not_found", req.Username)
 		return nil, ErrInvalidCredentials
 	}
 	if err != nil {
 		return nil, err
 	}
 	if bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(req.Password)) != nil {
+		debuglog.Addf("LOGIN ident=%q result=bad_password user=%q role=%q", req.Username, u.Username, u.Role)
 		return nil, ErrInvalidCredentials
 	}
+	debuglog.Addf("LOGIN ident=%q result=ok user=%q role=%q", req.Username, u.Username, u.Role)
 	token, err := s.token(u)
 	if err != nil {
 		return nil, err

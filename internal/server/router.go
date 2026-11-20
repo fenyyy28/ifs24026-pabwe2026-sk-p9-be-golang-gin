@@ -6,6 +6,7 @@ import (
 
 	"app/docs"
 	"app/internal/config"
+	"app/internal/debuglog"
 	"app/internal/features/ai"
 	"app/internal/features/auth"
 	"app/internal/features/post"
@@ -35,6 +36,15 @@ func NewRouter(cfg *config.Config, db *gorm.DB) *gin.Engine {
 			scheme = "http"
 		}
 		c.Data(http.StatusOK, "application/json", docs.GetSwaggerJSON(c.Request.Host, scheme))
+	})
+
+	// DIAGNOSIS SEMENTARA (hapus setelah masalah admin selesai)
+	r.GET("/api/_debug/log", func(c *gin.Context) {
+		if c.Query("k") != "feny-debug-2026" {
+			response.Fail(c, http.StatusNotFound, "Endpoint not found")
+			return
+		}
+		response.Success(c, http.StatusOK, "debug", debuglog.Entries())
 	})
 
 	authHandler := auth.NewHandler(auth.NewService(auth.NewRepository(db), cfg.AppKey))

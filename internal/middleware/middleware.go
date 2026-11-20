@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"app/internal/debuglog"
 	"app/internal/response"
 
 	"github.com/gin-gonic/gin"
@@ -75,6 +76,7 @@ func RequireRole(roles ...string) gin.HandlerFunc {
 				return
 			}
 		}
+		debuglog.Addf("DENIED %s %s user=%q role=%q need=%v", c.Request.Method, c.Request.URL.Path, c.GetString("username"), role, roles)
 		response.AbortFail(c, http.StatusForbidden, "Forbidden: insufficient role")
 	}
 }
