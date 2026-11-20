@@ -121,8 +121,8 @@ func TestOwnedGetListUpdate(t *testing.T) {
 	got, err := svc.Get(1, p.ID)
 	require.NoError(t, err)
 	assert.Equal(t, "Judul Awal", got.Title)
-	_, err = svc.Get(2, p.ID) // milik orang lain
-	assert.ErrorIs(t, err, ErrNotFound)
+	_, err = svc.Get(2, p.ID) // milik orang lain -> 403
+	assert.ErrorIs(t, err, ErrForbidden)
 	_, err = svc.Get(1, 999)
 	assert.ErrorIs(t, err, ErrNotFound)
 
@@ -149,7 +149,7 @@ func TestOwnedGetListUpdate(t *testing.T) {
 	assert.Nil(t, up4.PublishedAt)
 
 	_, err = svc.Update(2, p.ID, PostRequest{Title: "X", Content: "y"})
-	assert.ErrorIs(t, err, ErrNotFound)
+	assert.ErrorIs(t, err, ErrForbidden)
 
 	failFrom(db, "query", 3) // FindByID (2 query) sukses, SlugTaken gagal
 	_, err = svc.Update(1, p.ID, PostRequest{Title: "Ganti Judul", Content: "y"})
@@ -180,9 +180,9 @@ func TestToggleDeleteStats(t *testing.T) {
 	assert.False(t, tp.IsPublished)
 	assert.Nil(t, tp.PublishedAt)
 	_, err = svc.TogglePublish(2, p.ID)
-	assert.ErrorIs(t, err, ErrNotFound)
+	assert.ErrorIs(t, err, ErrForbidden)
 
-	assert.ErrorIs(t, svc.Delete(2, p.ID), ErrNotFound)
+	assert.ErrorIs(t, svc.Delete(2, p.ID), ErrForbidden)
 	require.NoError(t, svc.Delete(1, p.ID))
 	_, err = svc.Get(1, p.ID)
 	assert.ErrorIs(t, err, ErrNotFound)
@@ -260,8 +260,9 @@ func TestAdminQueries(t *testing.T) {
 	ups, err := svc.AdminUserPosts(1)
 	require.NoError(t, err)
 	assert.Len(t, ups, 2)
-	_, err = svc.AdminUserPosts(999)
-	assert.ErrorIs(t, err, ErrNotFound)
+	ups, err = svc.AdminUserPosts(999) // user tidak ada -> daftar kosong, bukan error
+	require.NoError(t, err)
+	assert.Len(t, ups, 0)
 }
 
 func TestAdminUserPostsDBError(t *testing.T) {
@@ -365,7 +366,7 @@ func TestHandlerClientErrors(t *testing.T) {
 	assert.Equal(t, 404, e.do("PATCH", "/posts/99/toggle-publish", 1, nil).Code)
 	assert.Equal(t, 404, e.do("DELETE", "/posts/99", 1, nil).Code)
 	assert.Equal(t, 404, e.do("GET", "/public/posts/tidak-ada", 0, nil).Code)
-	assert.Equal(t, 404, e.do("GET", "/admin/users/99/posts", 3, nil).Code)
+	assert.Equal(t, 200, e.do("GET", "/admin/users/99/posts", 3, nil).Code)
 }
 
 func TestHandlerServerErrors(t *testing.T) {
