@@ -122,6 +122,12 @@ func (s *Service) owned(userID, id uint) (*database.Post, error) {
 	return p, nil
 }
 
+// CheckOwner memastikan artikel ada (404) dan milik user (403) tanpa mengubah data.
+func (s *Service) CheckOwner(userID, id uint) error {
+	_, err := s.owned(userID, id)
+	return err
+}
+
 // Get mengambil artikel milik penulis berdasarkan ID.
 func (s *Service) Get(userID, id uint) (*database.Post, error) { return s.owned(userID, id) }
 

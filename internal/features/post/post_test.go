@@ -352,6 +352,7 @@ func TestHandlerHappyPath(t *testing.T) {
 
 func TestHandlerClientErrors(t *testing.T) {
 	e := newEnv(t)
+	require.Equal(t, 201, e.do("POST", "/posts", 1, `{"title":"Milik Satu","content":"isi"}`).Code)
 	for _, c := range []struct{ m, p string }{
 		{"GET", "/posts/abc"}, {"PUT", "/posts/abc"}, {"PATCH", "/posts/abc/toggle-publish"},
 		{"DELETE", "/posts/abc"}, {"GET", "/admin/users/abc/posts"},
@@ -367,6 +368,17 @@ func TestHandlerClientErrors(t *testing.T) {
 	assert.Equal(t, 404, e.do("DELETE", "/posts/99", 1, nil).Code)
 	assert.Equal(t, 404, e.do("GET", "/public/posts/tidak-ada", 0, nil).Code)
 	assert.Equal(t, 200, e.do("GET", "/admin/users/99/posts", 3, nil).Code)
+
+	// ID angka 0 / di luar jangkauan = tidak ada (404); admin: daftar kosong (200)
+	assert.Equal(t, 404, e.do("GET", "/posts/0", 1, nil).Code)
+	assert.Equal(t, 404, e.do("GET", "/posts/99999999999999999999999", 1, nil).Code)
+	assert.Equal(t, 200, e.do("GET", "/admin/users/0/posts", 3, nil).Code)
+	assert.Equal(t, 200, e.do("GET", "/admin/users/99999999999999999999999/posts", 3, nil).Code)
+
+	// 404/403 didahulukan dari validasi body pada PUT
+	assert.Equal(t, 404, e.do("PUT", "/posts/99", 1, `{}`).Code)
+	assert.Equal(t, 403, e.do("PUT", "/posts/1", 2, `{}`).Code)
+	assert.Equal(t, 403, e.do("PUT", "/posts/1", 2, `{"title":"x"}`).Code)
 }
 
 func TestHandlerServerErrors(t *testing.T) {

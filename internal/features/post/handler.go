@@ -3,6 +3,7 @@ package post
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"strconv"
 
 	"app/internal/middleware"
@@ -29,10 +30,18 @@ func (h *Handler) fail(c *gin.Context, err error) {
 	response.Error(c, http.StatusInternalServerError, "Internal server error")
 }
 
+var digitsOnly = regexp.MustCompile(`^[0-9]+$`)
+
+// parseID: bukan angka -> 400; angka 0 / di luar jangkauan dianggap tidak ada -> 404.
 func parseID(c *gin.Context) (uint, bool) {
-	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil || id == 0 {
+	raw := c.Param("id")
+	if !digitsOnly.MatchString(raw) {
 		response.Fail(c, http.StatusBadRequest, "Invalid ID")
+		return 0, false
+	}
+	id, err := strconv.ParseUint(raw, 10, 64)
+	if err != nil || id == 0 {
+		response.Fail(c, http.StatusNotFound, ErrNotFound.Error())
 		return 0, false
 	}
 	return uint(id), true
@@ -126,8 +135,14 @@ func (h *Handler) Update(c *gin.Context) {
 	if !ok {
 		return
 	}
-	req, ok := bindPost(c)
-	if !ok {
+	var req PostRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// artikel tidak ada (404) / milik orang lain (403) didahulukan dari validasi body (400)
+		if oerr := h.svc.CheckOwner(middleware.UserID(c), id); oerr != nil {
+			h.fail(c, oerr)
+			return
+		}
+		response.Fail(c, http.StatusBadRequest, "Validation error: "+err.Error())
 		return
 	}
 	p, err := h.svc.Update(middleware.UserID(c), id, req)
@@ -187,11 +202,17 @@ func (h *Handler) AdminPosts(c *gin.Context) {
 
 // AdminUserPosts godoc: GET /api/admin/users/:id/posts
 func (h *Handler) AdminUserPosts(c *gin.Context) {
-	id, ok := parseID(c)
-	if !ok {
+	raw := c.Param("id")
+	if !digitsOnly.MatchString(raw) {
+		response.Fail(c, http.StatusBadRequest, "Invalid ID")
 		return
 	}
-	posts, err := h.svc.AdminUserPosts(id)
+	id, perr := strconv.ParseUint(raw, 10, 64)
+	if perr != nil || id == 0 {
+		response.Success(c, http.StatusOK, "Posts retrieved", ToResponses(nil))
+		return
+	}
+	posts, err := h.svc.AdminUserPosts(uint(id))
 	if err != nil {
 		h.fail(c, err)
 		return

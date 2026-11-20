@@ -68,6 +68,7 @@ type UserSummary struct {
 type PublicPostResponse struct {
 	ID             uint       `json:"id"`
 	Author         AuthorInfo `json:"author"`
+	AuthorName     string     `json:"author_name"`
 	Title          string     `json:"title"`
 	Slug           string     `json:"slug"`
 	Category       string     `json:"category"`
@@ -84,6 +85,7 @@ func ToPublicResponse(p *database.Post) PublicPostResponse {
 	return PublicPostResponse{
 		ID:             p.ID,
 		Author:         AuthorInfo{ID: p.User.ID, Username: p.User.Username},
+		AuthorName:     p.User.Username,
 		Title:          p.Title,
 		Slug:           p.Slug,
 		Category:       p.Category,
