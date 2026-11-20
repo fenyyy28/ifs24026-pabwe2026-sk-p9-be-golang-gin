@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -41,11 +42,15 @@ type chatResponse struct {
 
 // Chat mengirim prompt ke Chat Completions dan mengembalikan isi balasan pertama.
 func (c *OpenAIClient) Chat(ctx context.Context, system, user string) (string, error) {
+	endpoint := strings.TrimRight(c.endpoint, "/")
+	if !strings.HasSuffix(endpoint, "/chat/completions") {
+		endpoint += "/chat/completions"
+	}
 	body, _ := json.Marshal(chatRequest{
 		Model:    c.model,
 		Messages: []chatMessage{{Role: "system", Content: system}, {Role: "user", Content: user}},
 	})
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint+"/chat/completions", bytes.NewReader(body))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, bytes.NewReader(body))
 	if err != nil {
 		return "", err
 	}

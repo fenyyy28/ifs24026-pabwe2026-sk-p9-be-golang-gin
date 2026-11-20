@@ -93,7 +93,11 @@ func (r *Repository) UserSummaries() ([]UserSummary, error) {
 	err := r.db.Model(&database.User{}).
 		Select("users.id AS id, users.username AS username, users.email AS email, users.role AS role, "+
 			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id) AS total_posts, "+
-			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id AND posts.is_published = ?) AS total_published", true).
+			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id) AS total_articles, "+
+			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id AND posts.is_published = ?) AS total_published, "+
+			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id AND posts.is_published = ?) AS total_selesai, "+
+			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id AND posts.is_published = ?) AS belum_selesai, "+
+			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id AND posts.is_published = ?) AS total_draf", true, true, false, false).
 		Order("users.id").Find(&out).Error
 	return out, err
 }

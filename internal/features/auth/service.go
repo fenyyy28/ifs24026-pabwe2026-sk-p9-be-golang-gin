@@ -40,8 +40,8 @@ func mapNotFound(err error) error {
 	return err
 }
 
-// Register mendaftarkan akun baru dengan role member.
-func (s *Service) Register(req RegisterRequest) (*database.User, error) {
+// Register mendaftarkan akun baru dengan role member dan menerbitkan token JWT.
+func (s *Service) Register(req RegisterRequest) (*AuthResponse, error) {
 	exists, err := s.repo.Exists(req.Username, req.Email, 0)
 	if err != nil {
 		return nil, err
@@ -54,7 +54,21 @@ func (s *Service) Register(req RegisterRequest) (*database.User, error) {
 		return nil, err
 	}
 	u := &database.User{Username: req.Username, Email: req.Email, Password: string(hash), Role: "member"}
-	return u, s.repo.Create(u)
+	if err := s.repo.Create(u); err != nil {
+		return nil, err
+	}
+	token, err := s.token(u)
+	if err != nil {
+		return nil, err
+	}
+	return &AuthResponse{
+		Token:    token,
+		User:     ToUserResponse(u),
+		ID:       u.ID,
+		Username: u.Username,
+		Email:    u.Email,
+		Role:     u.Role,
+	}, nil
 }
 
 // Login memverifikasi kredensial lalu menerbitkan token JWT.
@@ -73,7 +87,14 @@ func (s *Service) Login(req LoginRequest) (*AuthResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &AuthResponse{Token: token, User: ToUserResponse(u)}, nil
+	return &AuthResponse{
+		Token:    token,
+		User:     ToUserResponse(u),
+		ID:       u.ID,
+		Username: u.Username,
+		Email:    u.Email,
+		Role:     u.Role,
+	}, nil
 }
 
 func (s *Service) token(u *database.User) (string, error) {

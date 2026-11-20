@@ -30,10 +30,14 @@ type UserResponse struct {
 	Role     string `json:"role"`
 }
 
-// AuthResponse dikembalikan setelah login berhasil.
+// AuthResponse dikembalikan setelah register dan login berhasil.
 type AuthResponse struct {
-	Token string       `json:"token"`
-	User  UserResponse `json:"user"`
+	Token    string       `json:"token"`
+	User     UserResponse `json:"user"`
+	ID       uint         `json:"id,omitempty"`
+	Username string       `json:"username,omitempty"`
+	Email    string       `json:"email,omitempty"`
+	Role     string       `json:"role,omitempty"`
 }
 
 // ToUserResponse mengubah model User menjadi UserResponse.

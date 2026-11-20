@@ -19,7 +19,7 @@ func NewHandler(svc *Service) *Handler { return &Handler{svc: svc} }
 func (h *Handler) fail(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, ErrDuplicate):
-		response.Fail(c, http.StatusConflict, err.Error())
+		response.Fail(c, http.StatusBadRequest, err.Error())
 	case errors.Is(err, ErrInvalidCredentials):
 		response.Fail(c, http.StatusUnauthorized, err.Error())
 	case errors.Is(err, ErrNotFound):
@@ -36,12 +36,12 @@ func (h *Handler) Register(c *gin.Context) {
 		response.Fail(c, http.StatusBadRequest, "Validation error: "+err.Error())
 		return
 	}
-	u, err := h.svc.Register(req)
+	res, err := h.svc.Register(req)
 	if err != nil {
 		h.fail(c, err)
 		return
 	}
-	response.Success(c, http.StatusCreated, "Registration successful", ToUserResponse(u))
+	response.Success(c, http.StatusCreated, "Registration successful", res)
 }
 
 // Login godoc: POST /api/auth/login

@@ -22,12 +22,16 @@ func (h *Handler) fail(c *gin.Context, err error) {
 		response.Fail(c, http.StatusNotFound, err.Error())
 		return
 	}
+	if errors.Is(err, ErrForbidden) {
+		response.Fail(c, http.StatusForbidden, err.Error())
+		return
+	}
 	response.Error(c, http.StatusInternalServerError, "Internal server error")
 }
 
 func parseID(c *gin.Context) (uint, bool) {
 	id, err := strconv.ParseUint(c.Param("id"), 10, 64)
-	if err != nil {
+	if err != nil || id == 0 {
 		response.Fail(c, http.StatusBadRequest, "Invalid ID")
 		return 0, false
 	}
@@ -55,7 +59,7 @@ func (h *Handler) PublicList(c *gin.Context) {
 		h.fail(c, err)
 		return
 	}
-	response.Success(c, http.StatusOK, "Posts retrieved", ToResponses(posts))
+	response.Success(c, http.StatusOK, "Posts retrieved", ToPublicResponses(posts))
 }
 
 // PublicDetail godoc: GET /api/public/posts/:slug

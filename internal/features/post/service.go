@@ -16,6 +16,9 @@ import (
 // ErrNotFound dikembalikan saat artikel/user tidak ditemukan.
 var ErrNotFound = errors.New("post not found")
 
+// ErrForbidden dikembalikan saat pengguna mencoba mengakses/mengubah artikel milik orang lain.
+var ErrForbidden = errors.New("forbidden: article belongs to another user")
+
 // Categories adalah daftar kategori artikel yang valid.
 var Categories = []string{"Teknologi", "Pendidikan", "Gaya Hidup", "Bisnis", "Opini", "Umum"}
 
@@ -107,14 +110,14 @@ func (s *Service) Create(userID uint, req PostRequest) (*database.Post, error) {
 	return s.repo.FindByID(p.ID)
 }
 
-// owned mengambil artikel milik user; artikel milik orang lain dianggap tidak ditemukan.
+// owned mengambil artikel milik user; artikel milik orang lain mengembalikan ErrForbidden.
 func (s *Service) owned(userID, id uint) (*database.Post, error) {
 	p, err := s.repo.FindByID(id)
 	if err != nil {
 		return nil, mapNotFound(err)
 	}
 	if p.UserID != userID {
-		return nil, ErrNotFound
+		return nil, ErrForbidden
 	}
 	return p, nil
 }
@@ -175,7 +178,14 @@ func (s *Service) Stats(userID uint) (*Stats, error) {
 		return nil, err
 	}
 	draft := total - published
-	return &Stats{Total: total, TotalTerbit: published, TotalSelesai: published, TotalDraf: draft, BelumSelesai: draft}, nil
+	return &Stats{
+		TotalArticles: total,
+		Total:         total,
+		TotalSelesai:  published,
+		TotalTerbit:   published,
+		BelumSelesai:  draft,
+		TotalDraf:     draft,
+	}, nil
 }
 
 // PublicList mengambil artikel terbit dengan pencarian & filter kategori.
@@ -197,14 +207,7 @@ func (s *Service) AdminUsers() ([]UserSummary, error) {
 // AdminPosts mengambil seluruh artikel dari semua penulis.
 func (s *Service) AdminPosts() ([]database.Post, error) { return s.repo.ListAll() }
 
-// AdminUserPosts mengambil seluruh artikel milik user tertentu.
+// AdminUserPosts mengambil seluruh artikel milik user tertentu; user tanpa artikel / tidak ada mengembalikan daftar kosong.
 func (s *Service) AdminUserPosts(userID uint) ([]database.Post, error) {
-	exists, err := s.repo.UserExists(userID)
-	if err != nil {
-		return nil, err
-	}
-	if !exists {
-		return nil, ErrNotFound
-	}
 	return s.repo.ListByUser(userID)
 }
