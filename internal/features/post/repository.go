@@ -89,7 +89,7 @@ func (r *Repository) UserExists(id uint) (bool, error) {
 
 // UserSummaries mengambil seluruh user beserta total artikelnya.
 func (r *Repository) UserSummaries() ([]UserSummary, error) {
-	var out []UserSummary
+	out := make([]UserSummary, 0)
 	err := r.db.Model(&database.User{}).
 		Select("users.id AS id, users.username AS username, users.email AS email, users.role AS role, "+
 			"(SELECT COUNT(*) FROM posts WHERE posts.user_id = users.id) AS total_posts, "+

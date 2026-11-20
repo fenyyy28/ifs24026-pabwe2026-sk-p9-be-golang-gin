@@ -54,7 +54,7 @@ func Auth(secretKey string) gin.HandlerFunc {
 		}
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
-		c.Set("role", claims.Role)
+		c.Set("role", strings.TrimSpace(claims.Role))
 		c.Next()
 	}
 }
@@ -69,9 +69,9 @@ func UserID(c *gin.Context) uint {
 // RequireRole memastikan pengguna memiliki salah satu role yang diizinkan.
 func RequireRole(roles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		role := c.GetString("role")
+		role := strings.ToLower(strings.TrimSpace(c.GetString("role")))
 		for _, r := range roles {
-			if r == role {
+			if strings.ToLower(strings.TrimSpace(r)) == role {
 				c.Next()
 				return
 			}
