@@ -1,0 +1,659 @@
+swagger: '2.0'
+info:
+  title: Delcom Blog API
+  description: REST API Delcom Blog (Golang Gin, GORM, PostgreSQL) dengan AI Generator
+    & Search Engine.
+  version: '1.0'
+host: '{{HOST}}'
+basePath: /
+schemes:
+- '{{SCHEME}}'
+securityDefinitions:
+  BearerAuth:
+    type: apiKey
+    name: Authorization
+    in: header
+    description: 'Format: Bearer <token>'
+paths:
+  /api.json:
+    get:
+      tags:
+      - Docs
+      summary: Spesifikasi OpenAPI/Swagger JSON dinamis
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+  /api/public/categories:
+    get:
+      tags:
+      - Public
+      summary: Daftar kategori artikel
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+  /api/public/posts:
+    get:
+      tags:
+      - Public
+      summary: Daftar artikel terbit (?q=&category=)
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+      parameters:
+      - name: q
+        in: query
+        type: string
+        required: false
+      - name: category
+        in: query
+        type: string
+        required: false
+  /api/public/posts/{slug}:
+    get:
+      tags:
+      - Public
+      summary: Detail artikel terbit berdasarkan slug
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+      parameters:
+      - name: slug
+        in: path
+        required: true
+        type: string
+  /api/auth/register:
+    post:
+      tags:
+      - Auth
+      summary: Registrasi penulis baru
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/RegisterRequest'
+  /api/auth/login:
+    post:
+      tags:
+      - Auth
+      summary: Login & penerbitan token JWT
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/LoginRequest'
+  /api/auth/logout:
+    post:
+      tags:
+      - Auth
+      summary: Logout
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      security:
+      - BearerAuth: []
+  /api/auth/profile:
+    get:
+      tags:
+      - Auth
+      summary: Profil penulis login
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - BearerAuth: []
+    put:
+      tags:
+      - Auth
+      summary: Perbarui profil
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/UpdateProfileRequest'
+      security:
+      - BearerAuth: []
+  /api/posts:
+    get:
+      tags:
+      - Posts
+      summary: Artikel milik penulis login
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - BearerAuth: []
+    post:
+      tags:
+      - Posts
+      summary: Buat artikel baru
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/PostRequest'
+      security:
+      - BearerAuth: []
+  /api/posts/stats:
+    get:
+      tags:
+      - Posts
+      summary: Ringkasan 3 kartu statistik
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - BearerAuth: []
+  /api/posts/{id}:
+    get:
+      tags:
+      - Posts
+      summary: Detail artikel milik penulis
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+      security:
+      - BearerAuth: []
+    put:
+      tags:
+      - Posts
+      summary: Perbarui artikel
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/PostRequest'
+      security:
+      - BearerAuth: []
+    delete:
+      tags:
+      - Posts
+      summary: Hapus artikel
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+      security:
+      - BearerAuth: []
+  /api/posts/{id}/toggle-publish:
+    patch:
+      tags:
+      - Posts
+      summary: Toggle Draf/Terbit
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+      security:
+      - BearerAuth: []
+  /api/posts/ai-generate:
+    post:
+      tags:
+      - AI
+      summary: Generate draf artikel (Search Engine + OpenAI)
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+      consumes:
+      - application/json
+      parameters:
+      - name: body
+        in: body
+        required: true
+        schema:
+          $ref: '#/definitions/GenerateRequest'
+      security:
+      - BearerAuth: []
+  /api/admin/users:
+    get:
+      tags:
+      - Admin
+      summary: Seluruh pengguna + total artikel
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - BearerAuth: []
+  /api/admin/posts:
+    get:
+      tags:
+      - Admin
+      summary: Arsip seluruh artikel
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Response'
+      security:
+      - BearerAuth: []
+  /api/admin/users/{id}/posts:
+    get:
+      tags:
+      - Admin
+      summary: Artikel milik pengguna tertentu
+      produces:
+      - application/json
+      responses:
+        '200':
+          description: OK
+          schema:
+            $ref: '#/definitions/Response'
+        '400':
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/Response'
+        '500':
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/Response'
+        '401':
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/Response'
+        '403':
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/Response'
+      parameters:
+      - name: id
+        in: path
+        required: true
+        type: integer
+      security:
+      - BearerAuth: []
+definitions:
+  Response:
+    type: object
+    properties:
+      status:
+        type: string
+        example: success
+      message:
+        type: string
+      data:
+        type: object
+  RegisterRequest:
+    type: object
+    properties:
+      username:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+  LoginRequest:
+    type: object
+    properties:
+      username:
+        type: string
+      password:
+        type: string
+  UpdateProfileRequest:
+    type: object
+    properties:
+      username:
+        type: string
+      email:
+        type: string
+      password:
+        type: string
+  PostRequest:
+    type: object
+    properties:
+      title:
+        type: string
+      category:
+        type: string
+      excerpt:
+        type: string
+      content:
+        type: string
+      cover_image_path:
+        type: string
+      is_published:
+        type: boolean
+  GenerateRequest:
+    type: object
+    properties:
+      topic:
+        type: string
+      category:
+        type: string
+      include_web_search:
+        type: boolean

@@ -1,0 +1,10 @@
+# Biner hasil build (wajib diawali "/" agar folder internal/server tidak ikut terabaikan)
+/server
+/server.exe
+/main
+/app
+
+# Environment & coverage
+.env
+coverage.out
+coverage.html
