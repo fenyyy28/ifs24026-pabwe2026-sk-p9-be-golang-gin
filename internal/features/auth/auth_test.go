@@ -201,7 +201,7 @@ func TestHandlerFlow(t *testing.T) {
 	w := send(r, "POST", "/register", "", map[string]string{"username": "feny", "email": "feny@mail.com", "password": "secret1"})
 	assert.Equal(t, 201, w.Code)
 	w = send(r, "POST", "/register", "", map[string]string{"username": "feny", "email": "feny@mail.com", "password": "secret1"})
-	assert.Equal(t, 409, w.Code)
+	assert.Equal(t, 400, w.Code) // username/email duplikat ditolak 400
 	w = send(r, "POST", "/register", "", `{"username":"x"}`)
 	assert.Equal(t, 400, w.Code)
 
